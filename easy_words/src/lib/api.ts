@@ -1,10 +1,9 @@
-// src/lib/api.js
 
 // Определяем типы данных, которые мы ожидаем получить от нашего API.
 // Это очень помогает для автодополнения и поиска ошибок.
 export interface Dictionary {
-  id: number;
-  name: string;
+  id: number; // ID словаря
+  name: string; // Название словаря
   created_at: string; // Даты приходят как строки в JSON
   owner: string;
   words: any[]; // Пока оставим тип any, позже можно создать интерфейс для слов
@@ -78,7 +77,10 @@ export function login(
 ): Promise<AuthResponse> {
   return apiFetch("/token/", "POST", { username, password });
 }
-
+export async function logout() {
+  // Просто удаляем токен из localStorage и store
+  localStorage.removeItem("accessToken");
+}
 /**
  * Получает список словарей для аутентифицированного пользователя.
  * @param token - Access токен пользователя.
@@ -86,4 +88,22 @@ export function login(
  */
 export function getDictionaries(token: string): Promise<Dictionary[]> {
   return apiFetch("/dictionaries/", "GET", null, token);
+}
+
+export async function register(username: string, password: string): Promise<void> {
+  const response = await fetch("http://localhost:8000/app/register/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username,
+      password
+    })
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data?.error || "Ошибка регистрации");
+  }
 }

@@ -1,28 +1,64 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  // 2. Импортируем наши функции и ИНТЕРФЕЙС Dictionary
-  import { login, getDictionaries, type Dictionary } from "$lib/api";
+  import { login, getDictionaries, register, type Dictionary } from "$lib/api";
+  import { accessToken, isAuthenticated } from "$lib/stores/authStore";
 
-  // 3. Явно указываем типы для наших переменных
   let dictionaries: Dictionary[] = [];
   let isLoading = true;
   let error: string | null = null;
 
-  onMount(async () => {
-    try {
-      // ВАЖНО: Не забудьте подставить свои реальные данные
-      const authData = await login("ваш_логин", "ваш_пароль");
-      const accessToken = authData.access;
+  // Вход
+  let username = "";
+  let password = "";
 
-      dictionaries = await getDictionaries(accessToken);
+  // Регистрация
+  let registerUsername = "";
+  let registerPassword = "";
+
+  async function handleLogin() {
+    isLoading = true;
+    try {
+      const authData = await login(username, password);
+      accessToken.set(authData.access);
+      isAuthenticated.set(true);
+      localStorage.setItem("accessToken", authData.access);
+      dictionaries = await getDictionaries(authData.access);
     } catch (e) {
-      // 4. Правильно обрабатываем ошибку типа 'unknown'
-      if (e instanceof Error) {
-        error = e.message;
-      } else {
-        error = "Произошла неизвестная ошибка";
-      }
+      error = e instanceof Error ? e.message : "Неизвестная ошибка";
+      isAuthenticated.set(false);
     } finally {
+      isLoading = false;
+    }
+  }
+
+  async function handleRegister() {
+    isLoading = true;
+    try {
+      await register(registerUsername, registerPassword);
+      username = registerUsername;
+      password = registerPassword;
+      await handleLogin();
+    } catch (e) {
+      error = e instanceof Error ? e.message : "Неизвестная ошибка";
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  onMount(async () => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      try {
+        dictionaries = await getDictionaries(token);
+        accessToken.set(token);
+        isAuthenticated.set(true);
+      } catch (e) {
+        localStorage.removeItem("accessToken");
+        isAuthenticated.set(false);
+      } finally {
+        isLoading = false;
+      }
+    } else {
       isLoading = false;
     }
   });
@@ -33,16 +69,43 @@
 
   {#if isLoading}
     <p>Загрузка...</p>
-  {:else if error}
-    <p style="color: red;">Ошибка: {error}</p>
+  {:else if !$isAuthenticated}
+    <!-- Форма входа -->
+    <h2>Вход в систему</h2>
+    <form on:submit|preventDefault={handleLogin}>
+      <input type="text" bind:value={username} placeholder="Имя пользователя" />
+      <input type="password" bind:value={password} placeholder="Пароль" />
+      <button type="submit">Войти</button>
+    </form>
+    <h2>Регистрация</h2>
+    <form on:submit|preventDefault={handleRegister}>
+      <input
+        type="text"
+        bind:value={registerUsername}
+        placeholder="Имя пользователя"
+      />
+      <input
+        type="password"
+        bind:value={registerPassword}
+        placeholder="Пароль"
+      />
+      <button type="submit">Зарегистрироваться</button>
+    </form>
+
+    {#if error}
+      <p style="color: red;">Ошибка: {error}</p>
+    {/if}
   {:else}
-    <ul>
-      {#each dictionaries as dictionary}
-        <li>{dictionary.name} (создан пользователем {dictionary.owner})</li>
-      {:else}
-        <p>У вас пока нет ни одного словаря. Пора создать новый!</p>
-      {/each}
-    </ul>
+    <!-- Контент для авторизованных -->
+    {#if dictionaries.length > 0}
+      <ul>
+        {#each dictionaries as dictionary}
+          <li>{dictionary.name} (создан пользователем {dictionary.owner})</li>
+        {/each}
+      </ul>
+    {:else}
+      <p>У вас пока нет ни одного словаря. Пора создать новый!</p>
+    {/if}
   {/if}
 </main>
 
@@ -50,5 +113,16 @@
   main {
     max-width: 600px;
     margin: 2rem auto;
+  }
+
+  input {
+    display: block;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    padding: 0.5rem;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
   }
 </style>
