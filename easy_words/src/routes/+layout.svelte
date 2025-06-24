@@ -52,7 +52,7 @@
     background-color: #333;
     padding: 10px 0;
     position: absolute;
-    bottom: 10px;
+    bottom: 0;
     left: 0;
   }
 
@@ -69,10 +69,12 @@
     text-decoration: none;
     font-weight: bold;
     font-size: 1.5em;
+    transition: all 0.3s ease;
   }
 
   .nav-item a:hover {
     text-decoration: underline;
+    color: #e62d2d;
   }
   .add {
     position: relative;
