@@ -27,9 +27,7 @@
       <a href="/add" class:active={$path === "/add"}><Fa icon={faPlus} /></a>
     </li>
     <li class="nav-item">
-      <a href="/setting" class:active={$path === "/setting"}
-        ><Fa icon={faGear} /></a
-      >
+      <a href="/dict" class:active={$path === "/dict"}><Fa icon={faPlus} /></a>
     </li>
     <li class="nav-item">
       <a

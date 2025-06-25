@@ -1,11 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { login, getDictionaries, register, type Dictionary } from "$lib/api";
+  import {
+    login,
+    getDictionaries,
+    register,
+    type Dictionary,
+    type Word,
+  } from "$lib/api";
   import { accessToken, isAuthenticated } from "$lib/stores/authStore";
-
+  // import { createWord } from "$lib/api";
   let dictionaries: Dictionary[] = [];
   let isLoading = true;
   let error: string | null = null;
+  let words: Word[] = [];
 
   // Вход
   let username = "";
@@ -16,9 +23,10 @@
   let registerPassword = "";
 
   async function handleLogin() {
+    //Функция для обработки входа пользователя
     isLoading = true;
     try {
-      const authData = await login(username, password);
+      const authData = await login(username, password); // Вызов API для входа
       accessToken.set(authData.access);
       isAuthenticated.set(true);
       localStorage.setItem("accessToken", authData.access);
@@ -32,9 +40,10 @@
   }
 
   async function handleRegister() {
+    // Функция для обработки регистрации пользователя
     isLoading = true;
     try {
-      await register(registerUsername, registerPassword);
+      await register(registerUsername, registerPassword); // Вызов API для регистрации
       username = registerUsername;
       password = registerPassword;
       await handleLogin();
@@ -46,6 +55,7 @@
   }
 
   onMount(async () => {
+    // Проверка наличия токена в localStorage при загрузке страницы
     const token = localStorage.getItem("accessToken");
     if (token) {
       try {
@@ -72,6 +82,9 @@
   {:else if !$isAuthenticated}
     <!-- Форма входа -->
     <h2>Вход в систему</h2>
+    <p>
+      Пожалуйста, войдите в систему или зарегистрируйтесь, чтобы продолжить.
+    </p>
     <form on:submit|preventDefault={handleLogin}>
       <input type="text" bind:value={username} placeholder="Имя пользователя" />
       <input type="password" bind:value={password} placeholder="Пароль" />
@@ -98,11 +111,24 @@
   {:else}
     <!-- Контент для авторизованных -->
     {#if dictionaries.length > 0}
-      <ul>
+      <select>
+        <option disabled selected>Выберите словарь</option>
         {#each dictionaries as dictionary}
-          <li>{dictionary.name} (создан пользователем {dictionary.owner})</li>
+          <option value={dictionary.id}>{dictionary.name}</option>
+        {/each}
+      </select>
+      <p>Выберите словарь из списка выше, чтобы начать изучение слов.</p>
+      <ul>
+        {#each words as word}
+          <li>{word.original_word} - {word.translated_word}</li>
         {/each}
       </ul>
+      <!-- </select>
+      <ul>
+        {#each dictionaries as dictionary}
+          <li>{dictionary.name}</li>
+        {/each}
+      </ul> -->
     {:else}
       <p>У вас пока нет ни одного словаря. Пора создать новый!</p>
     {/if}
