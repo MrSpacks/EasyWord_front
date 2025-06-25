@@ -72,6 +72,31 @@
       isLoading = false;
     }
   });
+  // Функция для получения слов из выбранного словаря
+  async function fetchWords(dictionaryId: number) {
+    isLoading = true;
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) throw new Error("Пользователь не авторизован");
+      const response = await fetch(
+        `http://localhost:8000/app/words/?dictionary=${dictionaryId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      words = await response.json();
+      if (!response.ok) {
+        throw new Error("Не удалось загрузить слова");
+      }
+      words = await response.json();
+    } catch (e) {
+      error = e instanceof Error ? e.message : "Неизвестная ошибка";
+    } finally {
+      isLoading = false;
+    }
+  }
 </script>
 
 <main>
@@ -111,24 +136,31 @@
   {:else}
     <!-- Контент для авторизованных -->
     {#if dictionaries.length > 0}
-      <select>
-        <option disabled selected>Выберите словарь</option>
+      <h2>Ваши словари</h2>
+      <select
+        on:change={(e) => {
+          const dictionaryId = parseInt((e.target as HTMLSelectElement).value);
+          fetchWords(dictionaryId);
+        }}
+      >
+        <option value="" disabled selected>Выберите словарь</option>
         {#each dictionaries as dictionary}
           <option value={dictionary.id}>{dictionary.name}</option>
         {/each}
       </select>
-      <p>Выберите словарь из списка выше, чтобы начать изучение слов.</p>
-      <ul>
-        {#each words as word}
-          <li>{word.original_word} - {word.translated_word}</li>
-        {/each}
-      </ul>
-      <!-- </select>
-      <ul>
-        {#each dictionaries as dictionary}
-          <li>{dictionary.name}</li>
-        {/each}
-      </ul> -->
+      {#if words.length > 0}
+        <ul>
+          {#each words as word}
+            <li>
+              <strong>{word.original_word}</strong> — {word.translated_word}
+              <br />
+              Изучено: {word.count} раз
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <p>Этот словарь пока пуст. Добавьте в него слова!</p>
+      {/if}
     {:else}
       <p>У вас пока нет ни одного словаря. Пора создать новый!</p>
     {/if}
