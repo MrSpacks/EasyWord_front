@@ -8,15 +8,7 @@ export interface Dictionary {
   owner: string;
 }
 
-export interface Word {
-  id: number; // ID слова
-  dictionary: number; // ID словаря, к которому принадлежит слово
-  original_word: string; // Текст слова
-  translated_word: string; // Определение слова
-  image: string | null; // URL изображения слова (может быть null)
-  created_at: string; // Дата создания слова
-  count: number; // Количество раз, когда слово было изучено
-}
+
 export interface AuthResponse {
   access: string;
   refresh: string;
@@ -125,12 +117,8 @@ export async function logout() {
 export function getDictionaries(token: string): Promise<Dictionary[]> {
   return apiFetch("/dictionaries/", "GET", null, token);
 }
-/**
- * Получает список слов для указанного словаря.
- * @param dictionaryId - ID словаря.
- * @param token - Access токен пользователя.
- * @returns Промис, который разрешается массивом слов.
- */
+
+
 
 /**
  * Получает список слов для указанного словаря.
@@ -193,6 +181,16 @@ export async function updateDictionary(
 
 /**! word API */
 
+
+export interface Word {
+  id: number; // ID слова
+  dictionary: number; // ID словаря, к которому принадлежит слово
+  original_word: string; // Текст слова
+  translated_word: string; // Определение слова
+  image: string | null; // URL изображения слова (может быть null)
+  created_at: string; // Дата создания слова
+  count: number; // Количество раз, когда слово было изучено
+}
 /**
  * Получаем список слов из словаря по его ID
  * @param dictionaryId - ID словаря, из которого нужно получить слова
@@ -203,7 +201,7 @@ export async function getWords(
   dictionaryId: number,
   token: string
 ): Promise<Word[]> {
-  return apiFetch(`/dictionaries/${dictionaryId}/words/`, "GET", null, token);
+  return apiFetch(`/words/?dictionary=${dictionaryId}`, "GET", null, token);
 }
 
 /**
@@ -216,11 +214,17 @@ export async function getWords(
 */
 export async function createWord(
   dictionaryId: number,
-  word: string,
-  translation: string,
+  original_word: string,
+  translated_word: string,
+  image: string | null,
   token: string
 ): Promise<Word> {
-  return apiFetch(`/dictionaries/${dictionaryId}/words/`, "POST", { word, translation }, token);
+  return apiFetch(
+    `/words/`,
+    "POST",
+    { dictionary: dictionaryId, original_word, translated_word, image },
+    token
+  );
 }
 
 /**
@@ -232,12 +236,25 @@ export async function createWord(
 * @returns Промис, который разрешается обновленным словом.
 */
 export async function updateWord(
-  dictionaryId: number,
   wordId: number,
-  word: Word,
-  token: string
+  original_word: string,
+  translated_word: string,
+  image: string | null,
+  token: string,
+  count?: number, // добавляем опционально count
 ): Promise<Word> {
-  return apiFetch(`/dictionaries/${dictionaryId}/words/${wordId}/`, "PUT", word, token);
+  const data: Record<string, any> = { original_word, translated_word, image };
+
+  if (count !== undefined) {
+    data.count = count;
+  }
+
+  return apiFetch(
+    `/words/${wordId}/`,
+    "PUT",
+    data,
+    token
+  );
 }
 /**
 * Удаляет слово из указанного словаря.
@@ -247,9 +264,8 @@ export async function updateWord(
 * @returns Промис, который разрешается при успешном удалении слова.
 */
 export async function deleteWord(
-  dictionaryId: number,
   wordId: number,
   token: string
 ): Promise<void> {
-  return apiFetch(`/dictionaries/${dictionaryId}/words/${wordId}/`, "DELETE", null, token);
-}             
+  return apiFetch(`/words/${wordId}/`, "DELETE", null, token);
+}        

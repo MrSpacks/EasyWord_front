@@ -27,17 +27,41 @@
     }
   });
   async function AddWord() {
-    const word = (document.getElementById("AddWord") as HTMLInputElement).value;
-    const translation = (
+    const original_word = (
+      document.getElementById("AddWord") as HTMLInputElement
+    ).value;
+    const translated_word = (
       document.getElementById("translation") as HTMLInputElement
     ).value;
     const dictionaryId = parseInt(
       (document.getElementById("dictionaryId") as HTMLSelectElement).value
     );
-
+    const image = (document.getElementById("image") as HTMLInputElement)
+      ?.files?.[0];
+    // Костыль для добавления изображения
+    // В реальном приложении нужно использовать более надежный способ получения файла
+    // Например, можно использовать библиотеку для работы с файлами или API браузера
+    // Здесь мы просто берем первый файл из input
+    // и преобразуем его в base64 строку
+    // const imageValue: string | null = image ? await fileToBase64(image) : null;
+    // Вспомогательная функция для преобразования файла в base64
+    // async function fileToBase64(file: File): Promise<string> {
+    //   return new Promise((resolve, reject) => {
+    //     const reader = new FileReader();
+    //     reader.onload = () => resolve(reader.result as string);
+    //     reader.onerror = reject;
+    //     reader.readAsDataURL(file);
+    //   });
+    // }
     try {
       const token = get(accessToken)!;
-      const newWord = await createWord(dictionaryId, word, translation, token);
+      const newWord = await createWord(
+        dictionaryId,
+        original_word,
+        translated_word,
+        image ? image.name : null, // Здесь можно использовать imageValue если реализовано добавление изображений
+        token
+      );
       alert("Слово успешно добавлено!");
     } catch (err) {
       alert(
@@ -58,6 +82,10 @@
       <input type="text" id="AddWord" name="AddWord" required />
       <label for="translation">перевод</label>
       <input type="text" id="translation" name="translation" required />
+      <!-- Функция добавления изображений добавлена но не работает -->
+      <!-- <label for="image">Изображение (необязательно)</label> -->
+      <!-- <input type="file" id="image" name="image" /> -->
+      <label for="dictionaryId">Словарь</label>
       <select id="dictionaryId" name="dictionaryId" required>
         <option value="" disabled selected>Выберите словарь</option>
         {#each dictionaries as dict}
